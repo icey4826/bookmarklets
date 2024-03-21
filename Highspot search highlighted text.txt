@@ -1,0 +1,1 @@
+javascript:(function() {  var highlightedText = window.getSelection().toString();  if (highlightedText) {    var baseUrl = 'https://procore.highspot.com/search?q=%27;    var searchUrl = baseUrl + encodeURIComponent(highlightedText);    window.open(searchUrl, %27_blank%27);  } else {    alert(%27Please highlight some text to search.%27);  }})();

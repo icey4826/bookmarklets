@@ -1,0 +1,116 @@
+javascript:(function() {
+    function setBreakStatus() {
+        const userButton = document.querySelector('.c-button-unstyled.p-ia__nav__user__button');
+        if (!userButton) {
+            console.error('User button not found');
+            return;
+        }
+        userButton.click();
+
+        setTimeout(() => {
+            const openStatusMenuButton = document.querySelector('.c-button-unstyled.p-ia__main_menu__custom_status_button');
+            if (!openStatusMenuButton) {
+                console.error('Open status menu button not found');
+                return;
+            }
+            openStatusMenuButton.click();
+
+            setTimeout(() => {
+                const now = new Date();
+                const fifteenMinutesLater = new Date(now.getTime() + 15 * 60000);
+                let hours = fifteenMinutesLater.getHours();
+                let minutes = fifteenMinutesLater.getMinutes();
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12;
+                minutes = minutes < 10 ? '0' + minutes : minutes;
+                const strTime = `${hours}:${minutes} ${ampm}`;
+
+                const statusInput = document.querySelector('.p-custom_status_modal__input_container .ql-editor[contenteditable="true"]');
+                if (!statusInput) {
+                    console.error('Status input not found');
+                    return;
+                }
+                statusInput.focus();
+                const breakStatusText = `Break until ${strTime}`;
+                document.execCommand('insertText', false, breakStatusText);
+
+                setTimeout(() => {
+                    const durationDropdownButton = document.querySelector('#custom_status_duration_default_button');
+                    if (!durationDropdownButton) {
+                        console.error('Duration dropdown button not found');
+                        return;
+                    }
+                    durationDropdownButton.click();
+
+                    setTimeout(() => {
+                        const thirtyMinutesOption = document.querySelector('[data-qa="custom_status_duration_default_option_1"]');
+                        if (!thirtyMinutesOption) {
+                            console.error('30 minutes option not found');
+                            return;
+                        }
+                        thirtyMinutesOption.click();
+
+                        const saveButton = document.querySelector('[data-qa="custom_status_input_go"]');
+                        if (!saveButton) {
+                            console.error('Save button not found');
+                            return;
+                        }
+                        saveButton.click();
+                    }, 500);
+                }, 500);
+            }, 500);
+        }, 500);
+    }
+
+    function setLunchStatus() {
+        const userButton = document.querySelector('.p-ia__nav__user__button');
+        if (!userButton) {
+            console.error('User button not found');
+            return;
+        }
+        userButton.click();
+
+        setTimeout(() => {
+            const customStatusButton = document.querySelector('.p-ia__main_menu__custom_status_button');
+            if (!customStatusButton) {
+                console.error('Custom status button not found');
+                return;
+            }
+            customStatusButton.click();
+
+            setTimeout(() => {
+                const presetButtons = document.querySelectorAll('.p-custom_status_modal__preset');
+                const lunchPresetButton = Array.from(presetButtons).find(button => {
+                    const durationElement = button.querySelector('.p-custom_status_modal__preset_duration');
+                    return durationElement && durationElement.textContent.trim() === '1 hour';
+                });
+
+                if (lunchPresetButton) {
+                    lunchPresetButton.click();
+
+                    setTimeout(() => {
+                        const saveButton = document.querySelector('.c-button.c-button--primary.c-button--medium[data-qa="custom_status_input_go"]');
+                        if (!saveButton) {
+                            console.error('Save button not found');
+                            return;
+                        }
+                        saveButton.click();
+                    }, 500);
+                } else {
+                    console.error('Lunch preset button not found');
+                    return;
+                }
+            }, 500);
+        }, 500);
+    }
+
+    const choice = prompt("Enter 1 for Break or 2 for Lunch:");
+    if (choice === "1") {
+        setBreakStatus();
+    } else if (choice === "2") {
+        setLunchStatus();
+    } else {
+        console.log("Invalid choice.");
+    }
+})();

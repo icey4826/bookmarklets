@@ -1,0 +1,58 @@
+javascript: (function () {
+  var url = window.location.href;
+  var regexUUID = /[\/~]([0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?!.*[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/i;
+  var matchUUID = regexUUID.exec(url);
+  var notification = null;
+
+  function showNotification(msg) {
+    if (!notification) {
+      notification = document.createElement('div');
+      Object.assign(notification.style, {
+        position: 'fixed',
+        top: '40%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        backgroundColor: 'black',
+        color: 'yellow',
+        padding: '20px',
+        zIndex: '10000',
+        borderRadius: '5px',
+        fontSize: '20px',
+        maxWidth: '90%',
+        textAlign: 'center',
+        boxSizing: 'border-box',
+      });
+      document.body.appendChild(notification);
+    }
+    notification.textContent = msg;
+    setTimeout(function () {
+      if (notification && notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+        notification = null;
+      }
+    }, 4000);
+  }
+
+  if (matchUUID && matchUUID.length === 2) {
+    var uuid = matchUUID[1];
+    navigator.clipboard.writeText(uuid)
+      .then(() => {
+        showNotification("Last UUID copied to clipboard: " + uuid);
+        setTimeout(() => {
+          var regexDomain = /\/\/(.*?)\.hh2/;
+          var matchDomain = regexDomain.exec(url);
+          if (matchDomain && matchDomain.length === 2) {
+            var domainPart = matchDomain[1];
+            navigator.clipboard.writeText(domainPart)
+              .then(() => showNotification("Domain part copied to clipboard: " + domainPart))
+              .catch(err => console.error("Error copying domain part: ", err));
+          } else {
+            showNotification("Domain part not found.");
+          }
+        }, 3000);
+      })
+      .catch(err => console.error("Error copying UUID: ", err));
+  } else {
+    showNotification("UUID not found in the URL.");
+  }
+})();

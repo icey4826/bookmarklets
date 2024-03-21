@@ -1,0 +1,57 @@
+javascript:(function() {
+    var statuses = ['ERP - Cases Only', 'ERP - Phone and Cases', 'Break', 'Meeting', 'Lunch', 'Personal Time', 'Backing Off', 'ERP - Backlog'];
+    var statusChoices = statuses.map(function(status, index) { 
+        return (index + 1) + '. ' + status; 
+    }).join('\n');
+    var selectedStatusIndex = prompt("Select a status by entering the number:\n" + statusChoices);
+    var newStatus = statuses[parseInt(selectedStatusIndex) - 1];
+
+    if (newStatus) {
+        var statusChanged = false;
+        var statusElements = document.querySelectorAll('.slds-truncate');
+        statusElements.forEach(function(element) {
+            if (element.textContent.trim() === newStatus) {
+                element.closest('a').click();
+                statusChanged = true;
+            }
+        });
+
+        if (statusChanged) {
+            var omniChannelElements = document.querySelectorAll('span.itemTitle.slds-truncate');
+            omniChannelElements.forEach(function(element) {
+                if (element.textContent.includes('Omni-Channel')) {
+                    element.textContent = 'Omni-Channel (' + newStatus + ')';
+                }
+            });
+            showNotification('Successfully changed to ' + newStatus + '.');
+        } else {
+            showNotification('The status change was not successful. Open the Status menu once to enable.');
+        }
+    } else {
+        showNotification('Invalid choice. Please reload and try again.');
+    }
+
+    function showNotification(msg) {
+        var notification = document.createElement('div');
+        notification.textContent = msg;
+        Object.assign(notification.style, {
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'black',
+            color: 'yellow',
+            padding: '15px',
+            zIndex: '10000',
+            borderRadius: '5px',
+            fontSize: '25px',
+            maxWidth: '90%',
+            textAlign: 'center',
+            boxSizing: 'border-box',
+        });
+        document.body.appendChild(notification);
+        setTimeout(function () {
+            document.body.removeChild(notification);
+        }, 5000);
+    }
+})();

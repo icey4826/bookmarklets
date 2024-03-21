@@ -1,0 +1,157 @@
+javascript: (function () {
+  var caseNumber = '';
+  var companyIDs = [];
+  var message = '';
+  var maxScrollAttempts = 5;
+  var scrollAttempts = 0;
+  var notification = null;
+
+  function showNotification(msg) {
+    if (!notification) {
+      notification = document.createElement('div');
+      Object.assign(notification.style, {
+        position: 'fixed',
+        top: '40%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        backgroundColor: 'black',
+        color: 'yellow',
+        padding: '20px',
+        zIndex: '10000',
+        borderRadius: '5px',
+        fontSize: '20px',
+        maxWidth: '90%',
+        textAlign: 'center',
+        boxSizing: 'border-box',
+      });
+      document.body.appendChild(notification);
+    }
+    notification.textContent = msg;
+
+    setTimeout(function () {
+      if (notification && notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+        notification = null;
+      }
+    }, 5000);
+  }
+
+  function createUserSelection() {
+    var label = document.createElement('label');
+    label.setAttribute('id', 'companyIDLabel');
+    label.textContent = "Multiple Company IDs found:";
+    Object.assign(label.style, {
+      position: 'fixed',
+      top: '45%',
+      left: '50%',
+      transform: 'translate(-50%, -100%)',
+      zIndex: '10001',
+      color: 'yellow',
+      fontSize: '24px',
+    });
+
+    var select = document.createElement('select');
+    select.setAttribute('id', 'companyIDSelector');
+    var defaultOption = document.createElement('option');
+    defaultOption.value = "";
+    defaultOption.text = "Select a company ID";
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    select.appendChild(defaultOption);
+
+    companyIDs.forEach(function (id) {
+      var option = document.createElement('option');
+      option.value = id;
+      option.text = id;
+      select.appendChild(option);
+    });
+
+    select.onchange = function () {
+      var selectedID = this.value;
+      if (selectedID) {
+        companyIDs = [selectedID];
+        document.body.removeChild(select);
+        document.body.removeChild(label);
+        continueCopying();
+      }
+    };
+
+    Object.assign(select.style, {
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: '10001',
+      fontSize: '20px',
+    });
+
+    document.body.appendChild(label);
+    document.body.appendChild(select);
+  }
+
+  function continueCopying() {
+    var hashtagText = "#[" + companyIDs[0] + " ERP]";
+    copyToClipboard(hashtagText, function () {
+      message += 'Hashtag copied: ' + hashtagText + '\n';
+      showNotification(message);
+      copyToClipboard(caseNumber, function () {
+        message += 'Case number copied: ' + caseNumber + '\n';
+        showNotification(message);
+        copyToClipboard(companyIDs[0], function () {
+          message += 'Company ID copied: ' + companyIDs[0];
+          showNotification(message);
+        });
+      });
+    });
+  }
+
+  function findCompanyID() {
+    var visibleContent = document.body.innerText;
+    var regex = /procore\.com\/(\d+)\/company\/home/g;
+    var match;
+    while ((match = regex.exec(visibleContent)) !== null) {
+      if (companyIDs.indexOf(match[1]) === -1) {
+        companyIDs.push(match[1]);
+      }
+    }
+
+    if (companyIDs.length > 1) {
+      createUserSelection();
+    } else if (companyIDs.length === 1) {
+      continueCopying();
+    } else {
+      scrollAttempts++;
+      if (scrollAttempts <= maxScrollAttempts) {
+        window.scrollBy(0, 500);
+        setTimeout(findCompanyID, 500);
+      } else {
+        showNotification('Company ID not found.');
+      }
+    }
+  }
+
+  function copyToClipboard(text, callback) {
+    var dummy = document.createElement('textarea');
+    document.body.appendChild(dummy);
+    dummy.value = text;
+    dummy.select();
+    document.execCommand('copy');
+    document.body.removeChild(dummy);
+    if (callback) {
+      setTimeout(callback, 500);
+    }
+  }
+
+  function findAndCopyCaseNumber() {
+    var caseText = document.title;
+    var caseMatch = caseText.match(/\d+ \| Case/);
+    if (caseMatch) {
+      caseNumber = caseMatch[0].split(' | ')[0];
+      findCompanyID();
+    } else {
+      showNotification('Case number not found.');
+    }
+  }
+
+  setTimeout(findAndCopyCaseNumber, 500);
+})();

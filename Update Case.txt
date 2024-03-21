@@ -1,0 +1,17 @@
+javascript: (function () {
+    function simulateClick(element) {
+        if (element) {
+            var evt = new MouseEvent("click", { bubbles: true, cancelable: true, view: window }); element.dispatchEvent(evt);
+        }
+    } function selectDropdownOptionByIndex(dropdownIndex, optionTitle, delay) {
+        setTimeout(function () {
+            var dropdowns = document.querySelectorAll('a.select'); if (dropdowns.length > dropdownIndex) {
+                simulateClick(dropdowns[dropdownIndex]); setTimeout(function () {
+                    var option = Array.from(document.querySelectorAll('a[role="menuitemradio"]')).find(el => el.textContent.trim() === optionTitle); if (option) { simulateClick(option); }
+                }, 300);
+            }
+        }, delay);
+    }
+    var updateCase = Array.from(document.querySelectorAll('span.title')).find(el => el.textContent.trim() === 'Update Case'); if (updateCase) { simulateClick(updateCase); }
+    var delayForDropdowns = 1000; selectDropdownOptionByIndex(0, 'Problem', delayForDropdowns); selectDropdownOptionByIndex(3, 'ERP Tab', delayForDropdowns + 300); selectDropdownOptionByIndex(4, '1', delayForDropdowns + 300); selectDropdownOptionByIndex(6, 'Partner Incident', delayForDropdowns + 300);
+})();

@@ -1,0 +1,48 @@
+javascript: (function () {
+  window.focus();
+  try {
+    var lastPost, senderName, isThread;
+    isThread = !!document.querySelector('.p-flexpane__title_container');
+
+    if (isThread) {
+      lastPost = document.querySelector('.p-flexpane .c-virtual_list__item .c-link.c-timestamp');
+      senderName = lastPost ? document.querySelector('.p-flexpane .c-virtual_list__item .c-message__sender_button').textContent.trim() : '';
+    } else {
+      lastPost = document.querySelector('.c-virtual_list__item:last-child .c-link.c-timestamp');
+      senderName = lastPost ? document.querySelector('.c-virtual_list__item:last-child .c-message__sender_button').textContent.trim() : '';
+    }
+
+    if (lastPost && senderName) {
+      var postLink = lastPost.href;
+      var plaintext = senderName + " " + postLink;
+      var richtext = "<a href='" + postLink + "'>" + senderName + "</a>";
+      console.log("Copying details to clipboard...");
+      const clipboardItem = new ClipboardItem({
+        "text/plain": new Blob([plaintext], { type: "text/plain" }),
+        "text/html": new Blob([richtext], { type: "text/html" }),
+      });
+      navigator.clipboard.write([clipboardItem]);
+      var notification = document.createElement("div");
+      notification.style.position = 'fixed';
+      notification.style.top = '50%';
+      notification.style.left = '50%';
+      notification.style.transform = 'translate(-50%, -50%)';
+      notification.style.backgroundColor = 'black';
+      notification.style.color = 'yellow';
+      notification.style.padding = '25px';
+      notification.style.zIndex = '1000';
+      notification.style.borderRadius = '15px';
+      notification.style.textAlign = 'center';
+      notification.innerText = "Copied: " + plaintext;
+      document.body.appendChild(notification);
+      setTimeout(function () {
+        document.body.removeChild(notification);
+      }, 2000);
+    } else {
+      alert('No posts found in the current channel or sender name not found.');
+    }
+  } catch (error) {
+    console.error("An error occurred:", error);
+    alert("Oops! There was an error. Please try again.");
+  }
+})();
