@@ -1,0 +1,9 @@
+javascript:(function(){
+    var selectedText = window.getSelection().toString();
+    if (selectedText.length === 0) {
+        alert('No text selected. Please highlight some text to count the characters.');
+    } else {
+        var characterCount = selectedText.length;
+        alert('Character count (including spaces): ' + characterCount);
+    }
+})();

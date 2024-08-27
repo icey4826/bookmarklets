@@ -1,0 +1,201 @@
+javascript:(function () {
+  window.focus();
+
+  function promptAndCopy(text, htmlText) {
+    const userText = prompt("Edit the text before copying:", text);
+    if (userText !== null) {
+      const clipboardItem = new ClipboardItem({
+        "text/plain": new Blob([userText], { type: "text/plain" }),
+        "text/html": new Blob([htmlText], { type: "text/html" })
+      });
+      navigator.clipboard.write([clipboardItem]).then(() => {
+        alert("Copied to clipboard:\n" + userText);
+      }).catch(err => {
+        alert('Failed to copy text: ' + err);
+      });
+    }
+  }
+
+  function fallbackCopy() {
+    setTimeout(function () {
+      try {
+        var pageTitle = document.title;
+        var pageURL = document.location.href;
+        var plaintext = pageTitle + " " + pageURL;
+        var richtext = "<a href='" + pageURL + "'>" + pageTitle + "</a>";
+        const clipboardItem = new ClipboardItem({
+          "text/plain": new Blob([plaintext], { type: "text/plain" }),
+          "text/html": new Blob([richtext], { type: "text/html" })
+        });
+        navigator.clipboard.write([clipboardItem]).then(function () {
+          var notification = document.createElement("div");
+          notification.style.position = 'fixed';
+          notification.style.top = '50%';
+          notification.style.left = '50%';
+          notification.style.transform = 'translate(-50%, -50%)';
+          notification.style.backgroundColor = 'black';
+          notification.style.color = 'yellow';
+          notification.style.padding = '25px';
+          notification.style.zIndex = '1000';
+          notification.style.borderRadius = '15px';
+          notification.style.textAlign = 'center';
+          notification.innerText = "Copied: " + plaintext;
+          document.body.appendChild(notification);
+          setTimeout(function () {
+            document.body.removeChild(notification);
+          }, 2000);
+        }, function (err) {
+          alert("Error: " + err);
+        });
+      } catch (err) {
+        alert("Oops! There was an error: " + err);
+      }
+    }, 100);
+  }
+
+  try {
+    const url = document.location.href;
+    let text = "";
+    let htmlText = "";
+
+    const getElementText = (selector) => document.querySelector(selector)?.outerHTML.split(">")[1].split("<")[0];
+
+    const handlers = [
+      {
+        regex: /erp_integrations/,
+        getText: () => {
+          let title = "ERP Integration Tool ";
+          const entity = url.split(".com/")[1].split("/")[3];
+          const titles = {
+            "default_financial_groupings": "(Std. Cost Codes & Cost Types)",
+            "vendors": "(Companies)",
+            "jobs": "(Jobs)",
+            "sub_jobs": "(Sub Jobs)",
+            "budgets": "(Budgets)",
+            "commitments": "(Commitments)",
+            "commitment_change_orders": "(Commitment Change Orders)",
+            "prime_contracts": "(Prime Contracts)",
+            "prime_contract_change_orders": "(Prime Contract Change Orders)",
+            "job_costs": "(Job Costs)",
+            "subcontractor_invoices": "(Subcontractor Invoices)"
+          };
+          title += titles[entity] || "";
+          return [title + " " + url, '<a href="' + url + '">' + title + "</a>"];
+        }
+      },
+      {
+        regex: /prime_contracts\/\d*\/change_orders\/change_order_packages/,
+        getText: () => {
+          const breadcrumb = document.body.innerHTML.match(/<nav class="breadcrumbs"><(.*)/gm)[0];
+          const primeContract = breadcrumb.match(/#(.{1,40})<\/span>/g)[0].slice(1, -7);
+          const changeOrder = breadcrumb.match(/\"active\">(.*)<\/span>/g)[0].slice(9, -7).split(":")[0];
+          return [changeOrder + " on Prime Contract " + primeContract + " " + url, '<a href="' + url + '">' + changeOrder + "</a> on Prime Contract " + primeContract];
+        }
+      },
+      {
+        regex: /prime_contracts\/\d*\/payment_applications/,
+        getText: () => {
+          let invoiceNumber = getElementText("[data-testid='invoice_number']") || document.body.innerHTML.match(/Invoice #:\n*\s*<\/th>\n.*<td>\n\s*([^<]*)\n/)[1];
+          let primeContract = getElementText("[data-qa='field_number']") + " - " + getElementText("[data-qa='field_title']") || document.body.innerHTML.match(/<nav class="breadcrumbs"><(.*)/gm)[0].match(/#(.{1,40})<\/span>/g)[0].slice(1, -7);
+          return ["Invoice #" + invoiceNumber + " on Prime Contract " + primeContract + " " + url, '<a href="' + url + '">Invoice #' + invoiceNumber + "</a> on Prime Contract " + primeContract];
+        }
+      },
+      {
+        regex: /prime_contracts/,
+        getText: () => {
+          let primeContract = getElementText("[data-qa='field_number']") + " - " + getElementText("[data-qa='field_title']") || document.body.innerHTML.match(/<nav class="breadcrumbs"><(.*)/gm)[0].match(/#(.{1,40})<\/span>/g)[0].slice(1, -7);
+          return ["Prime Contract " + primeContract + " " + url, 'Prime Contract <a href="' + url + '">' + primeContract + "</a>"];
+        }
+      },
+      {
+        regex: /contract_change_orders\/\d*/,
+        getText: () => {
+          const breadcrumb = document.body.innerHTML.match(/<nav class="breadcrumbs"><(.*)/gm)[0];
+          const commitmentNumber = breadcrumb.match(/<span>([^<]*)/g)[1].split("#")[1];
+          const changeOrder = breadcrumb.match(/<span class="active">([^<]*)/)[1].split(":")[0];
+          return [changeOrder + " on Commitment " + commitmentNumber + " " + url, '<a href="' + url + '">' + changeOrder + "</a> on Commitment " + commitmentNumber];
+        }
+      },
+      {
+        regex: /requisitions/,
+        getText: () => {
+          let invoiceNumber = getElementText("[data-testid='invoice_number']") || document.body.innerHTML.match(/Invoice #:<\/th>\n.*<td>([^<]*)/)[1];
+          let commitmentNumber = getElementText("[data-testid='showCommitment']").split("#")[1] || document.body.innerHTML.match(/<nav class="breadcrumbs"><(.*)/gm)[0].match(/<span>([^<]*)/g)[1].split("#")[1];
+          return ["Invoice #" + invoiceNumber + " on Commitment " + commitmentNumber + " " + url, '<a href="' + url + '">Invoice #' + invoiceNumber + "</a> on Commitment " + commitmentNumber];
+        }
+      },
+      {
+        regex: /contracts\/.*\/payments/,
+        getText: () => {
+          let commitmentNumber = getElementText("[data-qa='breadcrumb_active']").split("#")[1] || document.body.innerHTML.match(/<nav class="breadcrumbs"><(.*)/gm)[0].match(/class="active">([^<]*)/)[1].split("#")[1];
+          return ["Payments on Commitment " + commitmentNumber + " " + url, '<a href="' + url + '">Payments</a> on Commitment ' + commitmentNumber];
+        }
+      },
+      {
+        regex: /order_contracts/,
+        getText: () => {
+          let commitmentNumber = getElementText("[data-qa='breadcrumb_active']").split("#")[1] || document.body.innerHTML.match(/<nav class="breadcrumbs"><(.*)/gm)[0].match(/class="active">([^<]*)/)[1].split("#")[1];
+          return ["Commitment " + commitmentNumber + " " + url, 'Commitment <a href="' + url + '">' + commitmentNumber + "</a>"];
+        }
+      },
+      {
+        regex: /directory\/vendors/,
+        getText: () => {
+          const breadcrumb = document.body.innerHTML.match(/<nav class="breadcrumbs"><(.*)/gm)[0];
+          const vendorName = breadcrumb.match(/class="active">([^<]*)/)[1].trim();
+          let externalID = document.body.innerHTML.match(/External ID: ([^<]*)/)[1].trim() || document.body.innerHTML.match(/ERP Vendor ID: ([^<]*)/)[1].trim() || "N/A";
+          return ["Vendor " + externalID + " - " + vendorName + " " + url, 'Vendor <a href="' + url + '">' + externalID + " - " + vendorName + "</a>"];
+        }
+      },
+      {
+        regex: /budgeting/,
+        getText: () => {
+          let projectName = getElementText("[data-header='picker-company-project']").split(" - ")[0] || "Project " + url.split(".com/projects/")[1].split("/")[0];
+          return [projectName + "'s Budget " + url, projectName + "'s <a href=\"" + url + '">Budget</a>'];
+        }
+      },
+      {
+        regex: /wbs\/.*\/cost-codes/,
+        getText: () => {
+          const projectName = getElementText("[data-header='picker-company-project']").split(" ")[0];
+          const subJobName = getElementText("[data-qa='segment-breadcrumbs-name']");
+          return ["Sub Job " + subJobName + " " + url, 'Sub Job <a href="' + url + '">' + subJobName + "</a> on Project " + projectName];
+        }
+      },
+      {
+        regex: /wbs\/.*\/segment-items|tools\/wbs/,
+        getText: () => {
+          const projectName = getElementText("[data-header='picker-company-project']").split(" ")[0];
+          let segmentHeader = getElementText("[data-testid='segment-header']") || "Cost Code";
+          return [segmentHeader + "s " + url, '<a href="' + url + '">' + segmentHeader + "s</a> on Project " + projectName];
+        }
+      },
+      {
+        regex: /(project\/home)|(project\/admin)/,
+        getText: () => {
+          let projectName = getElementText("[data-header='picker-company-project']").split(" - ")[0] || "Project " + url.split(".com/projects/")[1].split("/")[0];
+          return ["Project " + projectName + " " + url, 'Project <a href="' + url + '">' + projectName + "</a>"];
+        }
+      },
+      {
+        regex: /support\.procore/,
+        getText: () => {
+          const title = document.querySelector("[id='title']").innerHTML.trim();
+          return [title + " " + url, '<a href="' + url + '">' + title + "</a>"];
+        }
+      }
+    ];
+
+    for (const handler of handlers) {
+      if (handler.regex.test(url)) {
+        [text, htmlText] = handler.getText();
+        promptAndCopy(text, htmlText);
+        return;
+      }
+    }
+
+    fallbackCopy();
+  } catch (error) {
+    fallbackCopy();
+  }
+})();

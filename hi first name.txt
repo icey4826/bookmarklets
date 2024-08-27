@@ -1,0 +1,78 @@
+javascript: (function () {
+  var notification = null;
+  function showNotification(msg) {
+    if (!notification) {
+      notification = document.createElement("div");
+      Object.assign(notification.style, {
+        position: "fixed",
+        top: "40%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        backgroundColor: "black",
+        color: "yellow",
+        padding: "20px",
+        zIndex: "10000",
+        borderRadius: "5px",
+        fontSize: "20px",
+        maxWidth: "90%",
+        textAlign: "center",
+        boxSizing: "border-box",
+      });
+      document.body.appendChild(notification);
+    }
+    notification.textContent = msg;
+    setTimeout(function () {
+      if (notification && notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+        notification = null;
+      }
+    }, 5000);
+  }
+  function getActiveTabContent() {
+    const activeTab = document.querySelector(
+      ".oneConsoleTabItem.slds-is-active.active"
+    );
+    if (!activeTab) return null;
+    const contentId = activeTab
+      .querySelector('[role="tab"]')
+      .getAttribute("aria-controls");
+    return contentId ? document.getElementById(contentId) : null;
+  }
+  try {
+    var activeTabContent = getActiveTabContent();
+    if (!activeTabContent) {
+      showNotification("Active tab content not found.");
+      return;
+    }
+    var contactNameElement = document.evaluate(
+      ".//p[text()='Contact Name']/following-sibling::p//a",
+      activeTabContent,
+      null,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+    ).singleNodeValue;
+    if (contactNameElement) {
+      var fullName =
+        contactNameElement.innerText.trim() ||
+        contactNameElement.textContent.trim();
+      if (fullName) {
+        var firstName = fullName.split(" ")[0];
+        var message = `Hi ${firstName},\n\n`;
+        navigator.clipboard
+          .writeText(message)
+          .then(function () {
+            showNotification("Message copied: " + message);
+          })
+          .catch(function (err) {
+            showNotification("Error copying text: " + err);
+          });
+      } else {
+        showNotification("Found the contact name element, but it is empty.");
+      }
+    } else {
+      showNotification("Contact name element not found.");
+    }
+  } catch (error) {
+    showNotification("An error occurred: " + error.message);
+  }
+})();
