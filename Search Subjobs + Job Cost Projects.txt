@@ -1,0 +1,42 @@
+javascript:(function() {
+  function makeSearchable(selectId) {
+    var select = document.getElementById(selectId);
+    if (!select) {
+      console.error('Element with ID ' + selectId + ' not found.');
+      return;
+    }
+    var searchInput = document.createElement('input');
+    searchInput.setAttribute('placeholder', 'Search...');
+    searchInput.style.width = '100%';
+    searchInput.style.marginBottom = '10px';
+    select.parentNode.insertBefore(searchInput, select);
+    searchInput.addEventListener('input', function() {
+      var filter = searchInput.value.toUpperCase();
+      for (var i = 0; i < select.options.length; i++) {
+        var option = select.options[i];
+        if (option.text.toUpperCase().indexOf(filter) > -1) {
+          option.style.display = '';
+        } else {
+          option.style.display = 'none';
+        }
+      }
+    });
+  }
+  makeSearchable('active_synced_projects');
+  makeSearchable('biller_select');
+  function updateUrl(selectId, paramName) {
+    var select = document.getElementById(selectId);
+    if (!select) {
+      console.error('Element with ID ' + selectId + ' not found.');
+      return;
+    }
+    select.addEventListener('change', function() {
+      var selectedOption = select.options[select.selectedIndex].value;
+      var url = new URL(window.location.href);
+      url.searchParams.set(paramName, selectedOption);
+      window.location.href = url.toString();
+    });
+  }
+  updateUrl('active_synced_projects', 'active_project_id');
+  updateUrl('biller_select', 'sub_job_id');
+})();
